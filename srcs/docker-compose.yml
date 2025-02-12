@@ -1,0 +1,143 @@
+services:
+#     php:
+#         container_name: php
+#         image: php
+#         build: ./requirements/php
+#         restart: unless-stopped
+#         stop_signal: SIGTERM
+#         networks:
+#           - inception-network
+#         ports:
+#           - 9000:9000
+#         env_file: .env
+
+    nginx:
+        container_name: nginx
+        image: nginx
+        build: ./requirements/nginx/
+        depends_on:
+          - wordpress
+          # - php
+        ports:
+          # - 443:443
+          - 44003:44003
+        restart: unless-stopped
+        stop_signal: SIGTERM
+        networks:
+          - inception-network
+        env_file: .env
+    
+    wordpress:
+        container_name: wordpress
+        # image: wordpress:6.2.2-apache
+        image: wordpress
+        depends_on:
+            - mariadb
+        build: ./requirements/wordpress
+        #   context: ./requirements/wordpress
+        #   dockerfile: Dockerfile
+        restart: unless-stopped
+        stop_signal: SIGTERM
+        networks:
+          - inception-network
+        ports:
+          - 9000:9000
+        env_file: .env
+        # environment:
+        #   WORDPRESS_DB_HOST:     mariadb:3306
+        #   WORDPRESS_DB_NAME:     '${DB_NAME}'
+        #   WORDPRESS_DB_USER:     '${DB_USER}'
+        #   WORDPRESS_DB_PASSWORD: '${DB_PASSWORD}'
+        volumes:
+          - wp-website:/var/www/html/wp-website
+    
+    mariadb:
+        container_name: mariadb
+        # image: mariadb:10.6.4-focal
+        image: mariadb
+        build: ./requirements/mariadb
+        # #   context: ./requirements/mariadb
+        # #   dockerfile: Dockerfile
+        restart: "unless-stopped"
+        stop_signal: SIGTERM
+        env_file: .env
+        environment:
+          MYSQL_ROOT_PASSWORD: '${DB_ROOT_PWD}'
+          MYSQL_DATABASE: '${DB_NAME}'
+          MYSQL_USER: '${DB_USER}'
+          MYSQL_PASSWORD: '${DB_PASSWORD}'
+        ports:
+          - 3306-3306
+        networks:
+          - inception-network
+        volumes:
+          - wp-database:/var/lib/mysql
+
+volumes:
+  wp-database:
+    name:  wp-database
+    driver:  local
+
+  wp-website:
+    name:  wp-website
+    driver:  local
+
+networks:
+    inception-network:
+        name:     inception-network
+        driver:   bridge
+
+            # wordpress:
+    #     depends_on:
+    #       - mariadb
+    #     image: wordpress:6.2.2-apache
+    #     restart: unless-stopped
+    #     ports:
+    #       - 8080:80
+    #     env_file: .env
+    #     environment:
+    #       WORDPRESS_DB_HOST: mariadb:3306 # use the same name as database service
+    #       WORDPRESS_DB_NAME: '${MYSQL_DATABASE}'
+    #       WORDPRESS_DB_USER: '${MYSQL_USER}'
+    #       WORDPRESS_DB_PASSWORD: '${MYSQL_PASSWORD}'
+    #     volumes:
+    #       - wp-website:/var/www/html/wp-website
+    #     networks:
+    #       - inception-network
+
+        # phpmyadmin:
+    #     depends_on:
+    #       - mariadb
+    #     image: phpmyadmin/phpmyadmin
+    #     restart: unless-stopped
+    #     ports:
+    #       - 8081:80
+    #     env_file: .env
+    #     environment:
+    #       PMA_HOST: mariadb
+    #       MYSQL_ROOT_PASSWORD: '${MYSQL_ROOT_PASSWORD}'
+    #     networks:
+    #       - inception-network
+    
+
+    # mariadb:
+    # # We use a mariadb image which supports both amd64 & arm64 architecture
+    #     container_name: mariadb
+    #     image: mariadb:10.6.4-focal
+    #     restart: unless-stopped
+    #     ports:
+    #       - 3306:3306
+    #     env_file: .env
+    #     environment:
+    #       MYSQL_ROOT_PASSWORD: '${DB_ROOT_PWD}'
+    #       MYSQL_DATABASE:      '${DB_NAME}'
+    #       MYSQL_USER:          '${DB_USER}'
+    #       MYSQL_PASSWORD:      '${DB_PASSWORD}'
+    #     volumes:
+    #       - wp-database:/var/lib/mysql
+    #     networks:
+    #       - inception-network
+    #     deploy:
+    #       resources:
+    #         limits:
+    #           memory: 2048m
